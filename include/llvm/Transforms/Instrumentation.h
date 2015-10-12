@@ -44,6 +44,7 @@ class TargetMachine;
 BasicBlock::iterator PrepareToSplitEntryBlock(BasicBlock &BB,
                                               BasicBlock::iterator IP);
 
+class Pass;
 class ModulePass;
 class FunctionPass;
 
@@ -112,6 +113,10 @@ FunctionPass *createMemorySanitizerPass(int TrackOrigins = 0);
 
 // Insert ThreadSanitizer (race detection) instrumentation
 FunctionPass *createThreadSanitizerPass();
+
+// Insert CastVerifier instrumentation
+FunctionPass *createCastVerifierPass();
+Pass *createCverPruneStackPass();
 
 // Insert DataFlowSanitizer (dynamic data flow analysis) instrumentation
 ModulePass *createDataFlowSanitizerPass(

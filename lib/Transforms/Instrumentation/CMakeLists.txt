@@ -1,6 +1,8 @@
 add_llvm_library(LLVMInstrumentation
   AddressSanitizer.cpp
   BoundsChecking.cpp
+  CastVerifier.cpp
+  CverPruneStack.cpp
   DataFlowSanitizer.cpp
   GCOVProfiling.cpp
   MemorySanitizer.cpp
