@@ -188,7 +188,7 @@ bool CverPruneStack::CollectStackInvokeInstructions(
 
           CVER_DEBUG("[*] Prunning " << Callee->getName() << " in " <<
                      F->getName() << "\n");
-          StackInvokes.push_back(I);
+          StackInvokes.push_back(&*I);
           isCollected = true;
         }
       }

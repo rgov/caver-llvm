@@ -27,6 +27,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/Triple.h"
@@ -49,9 +50,11 @@
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
-#include "llvm/Target/TargetLibraryInfo.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/FileSystem.h"
+
+// Only used for getpid() in dumpCastInfo
+#include <unistd.h>
 
 using namespace llvm;
 
@@ -129,13 +132,13 @@ bool CastVerifier::doInitialization(Module &M) {
 // static Instruction *getPreviousInstruction(Instruction *inst) {
 //   BasicBlock::iterator it(inst);
 //   assert(it != inst->getParent()->begin());
-//   return --it;
+//   return &*(--it);
 // }
 
 static Instruction *getNextInstruction(Instruction *inst) {
   BasicBlock::iterator it(inst);
   assert(it != inst->getParent()->end());
-  return ++it;
+  return &*(++it);
 }
 
 bool CastVerifier::IsSecurityRelatedCast(Value *value, Type *CastedTy,
@@ -342,22 +345,20 @@ bool CastVerifier::isSafeCast(Instruction *Inst, Function &F) {
 
 static void dumpCastInfo(Type *DstTy) {
   // Get PID, and dump to /tmp/cast-info/[PID].txt
-  llvm::sys::self_process *SP = llvm::sys::process::get_self();
-  unsigned Pid = SP->get_id();
+  unsigned Pid = getpid();
   std::string LogFilename = std::string("/tmp/cast-info/") +
     std::to_string(Pid) + std::string(".txt");
-  std::string Error;
+  std::error_code Error;
 
-  llvm::raw_fd_ostream *OS = new llvm::raw_fd_ostream(
-    LogFilename.c_str(), Error,
+  llvm::raw_fd_ostream OS(LogFilename.c_str(), Error,
     llvm::sys::fs::F_Append | llvm::sys::fs::F_Text);
 
-  if (!Error.empty()) {
-    llvm::outs() << Error << "\n";
+  if (Error) {
+    llvm::errs() << Error.message() << "\n";
   } else {
     // Write to file.
-    *OS << *DstTy << "\n";
-    OS->close();
+    OS << *DstTy << "\n";
+    OS.close();
   }
   return;
 }
